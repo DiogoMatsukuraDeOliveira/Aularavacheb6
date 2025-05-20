@@ -8,17 +8,25 @@ class Node {
     }
 }
 
-public class PreOrderTraversal {
+public class BinaryTree {
 
-    public static void preOrder(Node node) {
+    // Em-Ordem
+    public static void inOrder(Node node) {
         if (node != null) {
+            inOrder(node.left);
             System.out.print(node.value + " ");
-            preOrder(node.left);
-            preOrder(node.right);
+            inOrder(node.right);
         }
     }
 
     public static void main(String[] args) {
+        // Montando a árvore:
+        //       A
+        //      / \
+        //     B   C
+        //    / \   \
+        //   D   E   F
+
         Node root = new Node("A");
         root.left = new Node("B");
         root.right = new Node("C");
@@ -26,8 +34,9 @@ public class PreOrderTraversal {
         root.left.right = new Node("E");
         root.right.right = new Node("F");
 
-        System.out.print("Pré-Ordem: ");
-        preOrder(root);
+        // Executando o percurso em ordem
+        System.out.print("Em-Ordem: ");
+        inOrder(root);
         System.out.println();
     }
 }
