@@ -8,13 +8,14 @@ class Node {
     }
 }
 
-public class CountNodes {
+public class PreOrderTraversal {
 
-    public static int countNodes(Node node) {
-        if (node == null) {
-            return 0;
+    public static void preOrder(Node node) {
+        if (node != null) {
+            System.out.print(node.value + " ");
+            preOrder(node.left);
+            preOrder(node.right);
         }
-        return 1 + countNodes(node.left) + countNodes(node.right);
     }
 
     public static void main(String[] args) {
@@ -25,6 +26,8 @@ public class CountNodes {
         root.left.right = new Node("E");
         root.right.right = new Node("F");
 
-        System.out.println("Total de nós na árvore: " + countNodes(root));
+        System.out.print("Pré-Ordem: ");
+        preOrder(root);
+        System.out.println();
     }
 }
