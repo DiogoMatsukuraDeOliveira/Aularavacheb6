@@ -450,6 +450,33 @@ public class Unificacao {
         }
     }
 
+    // Classe Nó para Árvore Rubro-Negra
+    static class NoRB {
+    static final boolean VERMELHO = true;
+    static final boolean PRETO = false;
+
+    int valor;
+    boolean cor;
+    NoRB esquerdo, direito, pai;
+
+    NoRB(int valor) {
+        this.valor = valor;
+        this.cor = VERMELHO; // Por padrão, novos nós são vermelhos
+        this.esquerdo = null;
+        this.direito = null;
+        this.pai = null;
+    }
+
+    boolean ehVermelho() {
+        return this != null && this.cor == VERMELHO;
+    }
+
+    boolean ehPreto() {
+        return this == null || this.cor == PRETO;
+    }
+}
+
+
     public static void main(String[] args) {
         // Demonstração da Árvore binária
         Arvore bin = new Arvore();
@@ -478,7 +505,7 @@ public class Unificacao {
         ArvoreAVL avl = new ArvoreAVL();
         int[] vAVL = {10, 20, 30, 40, 50, 25};
         for (int v : vAVL) avl.inserir(v);
-        System.out.println("\n=== Árvore AVL ===");
+        System.out.println("\n=== Arvore AVL ===");
         System.out.println("Altura: " + avl.altura());
         System.out.println("Contar nós: " + avl.contarNos());
         System.out.println("Fator balanceamento (raiz): " + avl.getBalance());
@@ -489,5 +516,7 @@ public class Unificacao {
         System.out.println("Buscar 30: " + avl.buscar(30));
         avl.remover(20);
         System.out.print("Após remover 20, em-ordem: "); avl.emOrdemRecursivo();
+
+         System.out.println("\n=== Arvores Rubro-Negras ===");
     }
 }
