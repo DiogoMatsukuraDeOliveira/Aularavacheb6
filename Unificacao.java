@@ -449,32 +449,37 @@ public class Unificacao {
             System.out.println();
         }
     }
-    // Classe NoRB representa um nó da Árvore Rubro-Negra
-static class NoRB {
-    static final boolean VERMELHO = true;
-    static final boolean PRETO = false;
+    static class ArvoreRubroNegra {
+    private final NoRB NIL = new NoRB(-1, Cor.PRETO); // Nó sentinela
+    private NoRB raiz = NIL;
 
-    int valor;
-    boolean cor;
-    NoRB esquerdo, direito, pai;
+    enum Cor { VERMELHO, PRETO }
 
-    NoRB(int valor) {
-        this.valor = valor;
-        this.cor = VERMELHO; // novos nós são vermelhos
+    private class NoRB {
+        int valor;
+        Cor cor;
+        NoRB esquerdo, direito, pai;
+
+        NoRB(int valor) {
+            this.valor = valor;
+            this.cor = Cor.VERMELHO;
+            this.esquerdo = this.direito = this.pai = NIL;
+        }
+
+        NoRB(int valor, Cor cor) {
+            this.valor = valor;
+            this.cor = cor;
+            this.esquerdo = this.direito = this.pai = NIL;
+        }
+
+        boolean ehVermelho() {
+            return this.cor == Cor.VERMELHO;
+        }
+
+        boolean ehPreto() {
+            return this.cor == Cor.PRETO;
+        }
     }
-
-    boolean ehVermelho() {
-        return this != null && this.cor == VERMELHO;
-    }
-
-    boolean ehPreto() {
-        return this == null || this.cor == PRETO;
-    }
-}
-
-// Classe ArvoreRubroNegra com inserção, remoção, balanceamento e rotações
-static class ArvoreRubroNegra {
-    private NoRB raiz;
 
     public void inserir(int valor) {
         NoRB novoNo = new NoRB(valor);
@@ -483,7 +488,7 @@ static class ArvoreRubroNegra {
     }
 
     private NoRB inserirRec(NoRB atual, NoRB novoNo) {
-        if (atual == null) return novoNo;
+        if (atual == NIL) return novoNo;
 
         if (novoNo.valor < atual.valor) {
             atual.esquerdo = inserirRec(atual.esquerdo, novoNo);
@@ -495,175 +500,215 @@ static class ArvoreRubroNegra {
         return atual;
     }
 
-    public void remover(int valor) {
-        NoRB no = buscarNo(raiz, valor);
-        if (no != null) removerNo(no);
-    }
-
-    private NoRB buscarNo(NoRB node, int valor) {
-        if (node == null || node.valor == valor) return node;
-        return valor < node.valor ? buscarNo(node.esquerdo, valor) : buscarNo(node.direito, valor);
-    }
-
     private void balancearInsercao(NoRB no) {
         while (no != raiz && no.pai.ehVermelho()) {
             if (no.pai == no.pai.pai.esquerdo) {
                 NoRB tio = no.pai.pai.direito;
-                if (tio != null && tio.ehVermelho()) {
-                    no.pai.cor = NoRB.PRETO;
-                    tio.cor = NoRB.PRETO;
-                    no.pai.pai.cor = NoRB.VERMELHO;
+                if (tio.ehVermelho()) {
+                    no.pai.cor = Cor.PRETO;
+                    tio.cor = Cor.PRETO;
+                    no.pai.pai.cor = Cor.VERMELHO;
                     no = no.pai.pai;
                 } else {
                     if (no == no.pai.direito) {
                         no = no.pai;
                         rotacaoEsquerda(no);
                     }
-                    no.pai.cor = NoRB.PRETO;
-                    no.pai.pai.cor = NoRB.VERMELHO;
+                    no.pai.cor = Cor.PRETO;
+                    no.pai.pai.cor = Cor.VERMELHO;
                     rotacaoDireita(no.pai.pai);
                 }
             } else {
                 NoRB tio = no.pai.pai.esquerdo;
-                if (tio != null && tio.ehVermelho()) {
-                    no.pai.cor = NoRB.PRETO;
-                    tio.cor = NoRB.PRETO;
-                    no.pai.pai.cor = NoRB.VERMELHO;
+                if (tio.ehVermelho()) {
+                    no.pai.cor = Cor.PRETO;
+                    tio.cor = Cor.PRETO;
+                    no.pai.pai.cor = Cor.VERMELHO;
                     no = no.pai.pai;
                 } else {
                     if (no == no.pai.esquerdo) {
                         no = no.pai;
                         rotacaoDireita(no);
                     }
-                    no.pai.cor = NoRB.PRETO;
-                    no.pai.pai.cor = NoRB.VERMELHO;
+                    no.pai.cor = Cor.PRETO;
+                    no.pai.pai.cor = Cor.VERMELHO;
                     rotacaoEsquerda(no.pai.pai);
                 }
             }
         }
-        raiz.cor = NoRB.PRETO;
+        raiz.cor = Cor.PRETO;
+    }
+
+    public void remover(int valor) {
+        NoRB no = buscarNo(raiz, valor);
+        if (no != NIL) removerNo(no);
+    }
+
+    private NoRB buscarNo(NoRB atual, int valor) {
+        if (atual == NIL || atual.valor == valor) return atual;
+        return valor < atual.valor ? buscarNo(atual.esquerdo, valor) : buscarNo(atual.direito, valor);
+    }
+
+    private NoRB minimo(NoRB no) {
+        while (no.esquerdo != NIL) no = no.esquerdo;
+        return no;
     }
 
     private void removerNo(NoRB no) {
-        NoRB substituto = (no.esquerdo != null) ? no.esquerdo : no.direito;
-        if (substituto != null) substituto.pai = no.pai;
+        NoRB y = no;
+        Cor corOriginal = y.cor;
+        NoRB x;
 
-        if (no.pai == null) {
-            raiz = substituto;
-        } else if (no == no.pai.esquerdo) {
-            no.pai.esquerdo = substituto;
+        if (no.esquerdo == NIL) {
+            x = no.direito;
+            transplantar(no, no.direito);
+        } else if (no.direito == NIL) {
+            x = no.esquerdo;
+            transplantar(no, no.esquerdo);
         } else {
-            no.pai.direito = substituto;
+            y = minimo(no.direito);
+            corOriginal = y.cor;
+            x = y.direito;
+            if (y.pai == no) {
+                x.pai = y;
+            } else {
+                transplantar(y, y.direito);
+                y.direito = no.direito;
+                y.direito.pai = y;
+            }
+            transplantar(no, y);
+            y.esquerdo = no.esquerdo;
+            y.esquerdo.pai = y;
+            y.cor = no.cor;
         }
 
-        if (no.cor == NoRB.PRETO) {
-            balancearRemocao(substituto);
+        if (corOriginal == Cor.PRETO) {
+            balancearRemocao(x);
         }
     }
 
-    private void balancearRemocao(NoRB no) {
-        while (no != raiz && no.ehPreto()) {
-            if (no == no.pai.esquerdo) {
-                NoRB irmao = no.pai.direito;
-                if (irmao.ehVermelho()) {
-                    irmao.cor = NoRB.PRETO;
-                    no.pai.cor = NoRB.VERMELHO;
-                    rotacaoEsquerda(no.pai);
-                    irmao = no.pai.direito;
+    private void transplantar(NoRB u, NoRB v) {
+        if (u.pai == NIL) raiz = v;
+        else if (u == u.pai.esquerdo) u.pai.esquerdo = v;
+        else u.pai.direito = v;
+        v.pai = u.pai;
+    }
+
+    private void balancearRemocao(NoRB x) {
+        while (x != raiz && x.ehPreto()) {
+            if (x == x.pai.esquerdo) {
+                NoRB w = x.pai.direito;
+                if (w.ehVermelho()) {
+                    w.cor = Cor.PRETO;
+                    x.pai.cor = Cor.VERMELHO;
+                    rotacaoEsquerda(x.pai);
+                    w = x.pai.direito;
                 }
-                if ((irmao.esquerdo == null || irmao.esquerdo.ehPreto()) &&
-                    (irmao.direito == null || irmao.direito.ehPreto())) {
-                    irmao.cor = NoRB.VERMELHO;
-                    no = no.pai;
+                if (w.esquerdo.ehPreto() && w.direito.ehPreto()) {
+                    w.cor = Cor.VERMELHO;
+                    x = x.pai;
                 } else {
-                    if (irmao.direito == null || irmao.direito.ehPreto()) {
-                        if (irmao.esquerdo != null) irmao.esquerdo.cor = NoRB.PRETO;
-                        irmao.cor = NoRB.VERMELHO;
-                        rotacaoDireita(irmao);
-                        irmao = no.pai.direito;
+                    if (w.direito.ehPreto()) {
+                        w.esquerdo.cor = Cor.PRETO;
+                        w.cor = Cor.VERMELHO;
+                        rotacaoDireita(w);
+                        w = x.pai.direito;
                     }
-                    irmao.cor = no.pai.cor;
-                    no.pai.cor = NoRB.PRETO;
-                    if (irmao.direito != null) irmao.direito.cor = NoRB.PRETO;
-                    rotacaoEsquerda(no.pai);
-                    no = raiz;
+                    w.cor = x.pai.cor;
+                    x.pai.cor = Cor.PRETO;
+                    w.direito.cor = Cor.PRETO;
+                    rotacaoEsquerda(x.pai);
+                    x = raiz;
                 }
             } else {
-                NoRB irmao = no.pai.esquerdo;
-                if (irmao.ehVermelho()) {
-                    irmao.cor = NoRB.PRETO;
-                    no.pai.cor = NoRB.VERMELHO;
-                    rotacaoDireita(no.pai);
-                    irmao = no.pai.esquerdo;
+                NoRB w = x.pai.esquerdo;
+                if (w.ehVermelho()) {
+                    w.cor = Cor.PRETO;
+                    x.pai.cor = Cor.VERMELHO;
+                    rotacaoDireita(x.pai);
+                    w = x.pai.esquerdo;
                 }
-                if ((irmao.direito == null || irmao.direito.ehPreto()) &&
-                    (irmao.esquerdo == null || irmao.esquerdo.ehPreto())) {
-                    irmao.cor = NoRB.VERMELHO;
-                    no = no.pai;
+                if (w.direito.ehPreto() && w.esquerdo.ehPreto()) {
+                    w.cor = Cor.VERMELHO;
+                    x = x.pai;
                 } else {
-                    if (irmao.esquerdo == null || irmao.esquerdo.ehPreto()) {
-                        if (irmao.direito != null) irmao.direito.cor = NoRB.PRETO;
-                        irmao.cor = NoRB.VERMELHO;
-                        rotacaoEsquerda(irmao);
-                        irmao = no.pai.esquerdo;
+                    if (w.esquerdo.ehPreto()) {
+                        w.direito.cor = Cor.PRETO;
+                        w.cor = Cor.VERMELHO;
+                        rotacaoEsquerda(w);
+                        w = x.pai.esquerdo;
                     }
-                    irmao.cor = no.pai.cor;
-                    no.pai.cor = NoRB.PRETO;
-                    if (irmao.esquerdo != null) irmao.esquerdo.cor = NoRB.PRETO;
-                    rotacaoDireita(no.pai);
-                    no = raiz;
+                    w.cor = x.pai.cor;
+                    x.pai.cor = Cor.PRETO;
+                    w.esquerdo.cor = Cor.PRETO;
+                    rotacaoDireita(x.pai);
+                    x = raiz;
                 }
             }
         }
-        if (no != null) no.cor = NoRB.PRETO;
+        x.cor = Cor.PRETO;
     }
 
-    private void rotacaoEsquerda(NoRB no) {
-        NoRB novoNo = no.direito;
-        no.direito = novoNo.esquerdo;
-        if (novoNo.esquerdo != null) novoNo.esquerdo.pai = no;
-        novoNo.pai = no.pai;
-        if (no.pai == null) {
-            raiz = novoNo;
-        } else if (no == no.pai.esquerdo) {
-            no.pai.esquerdo = novoNo;
-        } else {
-            no.pai.direito = novoNo;
-        }
-        novoNo.esquerdo = no;
-        no.pai = novoNo;
+    private void rotacaoEsquerda(NoRB x) {
+        NoRB y = x.direito;
+        x.direito = y.esquerdo;
+        if (y.esquerdo != NIL) y.esquerdo.pai = x;
+        y.pai = x.pai;
+        if (x.pai == NIL) raiz = y;
+        else if (x == x.pai.esquerdo) x.pai.esquerdo = y;
+        else x.pai.direito = y;
+        y.esquerdo = x;
+        x.pai = y;
     }
 
-    private void rotacaoDireita(NoRB no) {
-        NoRB novoNo = no.esquerdo;
-        no.esquerdo = novoNo.direito;
-        if (novoNo.direito != null) novoNo.direito.pai = no;
-        novoNo.pai = no.pai;
-        if (no.pai == null) {
-            raiz = novoNo;
-        } else if (no == no.pai.direito) {
-            no.pai.direito = novoNo;
-        } else {
-            no.pai.esquerdo = novoNo;
-        }
-        novoNo.direito = no;
-        no.pai = novoNo;
+    private void rotacaoDireita(NoRB x) {
+        NoRB y = x.esquerdo;
+        x.esquerdo = y.direito;
+        if (y.direito != NIL) y.direito.pai = x;
+        y.pai = x.pai;
+        if (x.pai == NIL) raiz = y;
+        else if (x == x.pai.direito) x.pai.direito = y;
+        else x.pai.esquerdo = y;
+        y.direito = x;
+        x.pai = y;
     }
+
     public void imprimirPreOrdem() {
         imprimirPreOrdem(raiz);
         System.out.println();
     }
 
     private void imprimirPreOrdem(NoRB no) {
-        if (no != null) {
-            String cor = no.cor == NoRB.VERMELHO ? "V" : "P";
+        if (no != NIL) {
+            String cor = no.cor == Cor.VERMELHO ? "V" : "P";
             System.out.print(no.valor + cor + " ");
             imprimirPreOrdem(no.esquerdo);
             imprimirPreOrdem(no.direito);
         }
     }
+
+    public void imprimirArvore() {
+    imprimirArvore(raiz, "", true);
 }
 
+private void imprimirArvore(NoRB no, String prefixo, boolean ehUltimo) {
+    if (no != NIL) {
+        System.out.print(prefixo);
+        System.out.print(ehUltimo ? "└── " : "├── ");
+        System.out.println(no.valor + (no.cor == Cor.VERMELHO ? "V" : "P"));
+
+        String novoPrefixo = prefixo + (ehUltimo ? "    " : "│   ");
+        boolean temFilhoDireito = no.direito != NIL;
+        if (no.esquerdo != NIL) {
+            imprimirArvore(no.esquerdo, novoPrefixo, !temFilhoDireito);
+        }
+        if (temFilhoDireito) {
+            imprimirArvore(no.direito, novoPrefixo, true);
+        }
+    }
+}
+
+}
 
     public static void main(String[] args) {
         // Demonstração da Árvore binária
@@ -707,7 +752,7 @@ static class ArvoreRubroNegra {
 
          // Demonstração da Árvore Rubro-Negra
         System.out.println("\n=== Arvores Rubro-Negras ===");
-        ArvoreRubroNegra arvore = new ArvoreRubroNegra();
+        ArvoreRubroNegra arvore = new  ArvoreRubroNegra();
         System.out.println("=== INSERÇOES ===");
         int[] inserir = {10, 20, 30, 15, 25, 5};
         for (int valor : inserir) {
@@ -720,5 +765,7 @@ static class ArvoreRubroNegra {
             System.out.println("Removendo: " + valor);arvore.remover(valor);
         }
         System.out.println("\nEstado da árvore após remoçoes (pré-ordem com cor):");arvore.imprimirPreOrdem();
+        System.out.println("\nEstado da árvore (visualizaçao):");
+        arvore.imprimirArvore();
     }
     }
